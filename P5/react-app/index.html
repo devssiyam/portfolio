@@ -7,6 +7,50 @@
   ============================================ -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Phase 28 (security): Content-Security-Policy + Referrer-Policy.
+       GitHub Pages cannot set custom HTTP headers, so the meta form is
+       the only mechanism for a static site. Every directive is
+       derived from what the built app actually loads (verified):
+       - script-src 'self'  : the only executable script is the
+         same-origin module bundle; the JSON-LD block is
+         application/ld+json (not executable, not governed);
+         no inline JS exists in the build.
+       - style-src          : built CSS is same-origin; 'unsafe-inline'
+         is required for React inline style ATTRIBUTES (style attributes
+         cannot be hashed); fonts.googleapis.com is the only external
+         stylesheet.
+       - font-src           : the woff2 files the Google Fonts CSS
+         references (fonts.gstatic.com).
+       - img-src            : data: covers the inline-SVG favicon;
+         'self' covers og-image.png once deployed. No <img> in the DOM.
+       - connect-src 'self' : the app makes zero XHR/fetch/WebSocket
+         calls (verified by audit) — nothing may.
+       - object-src 'none'  : no plugins, ever.
+       - base-uri 'self'    : no <base> hijack.
+       - frame-ancestors    : 'none' = clickjacking protection (this is
+         the meta-CSP equivalent of X-Frame-Options: DENY).
+       - form-action        : no real form submission ever happens (the
+         contact form is a JS mailto composer); mailto:/whatsapp: are
+         the only navigation targets the site performs programmatically
+         (navigate-to defaults to form-action, so they must be named
+         or those real flows break).
+       - default-src 'self' : everything not named above falls back to
+         same-origin.
+       Trade-off, stated plainly: 'unsafe-inline' in style-src is the
+         standard pragmatic cost for React inline style attributes
+         without a hash pipeline; the meaningful protections are
+         script-src 'self', object-src 'none', frame-ancestors 'none'
+         and connect-src 'self'. If this site ever moves to a host with
+         header support, move this policy to an HTTP header where style
+         hashes make 'unsafe-inline' droppable.
+       Referrer: no-referrer — outbound social/contact links send no
+       referrer; a personal site gains nothing from sending it. -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto: whatsapp:"
+  />
+  <meta name="referrer" content="no-referrer" />
   <meta name="description"
     content="MD SIYAM UZZAMAN – Frontend Developer & Shopify Store Designer. Creating modern, responsive, and visually attractive websites with clean UI and smooth user experience." />
   <meta name="keywords"
@@ -17,17 +61,76 @@
     content="Portfolio of MD SIYAM UZZAMAN – Frontend Developer & Shopify Store Designer from Bangladesh." />
   <meta property="og:type" content="website" />
 
+  <!-- Phase 23 (SEO): canonical + social. URL provenance — this is the
+       deterministic GitHub Pages address for THIS exact repo
+       (github.com/devssiyam/portfolio). The site is not deployed yet
+       (verified 404 in Phase 16), so the URL is the declared canonical
+       address and becomes live the moment Pages is enabled. If the site
+       ever moves to a different domain, update canonical, og:url,
+       og:image, twitter:image, sitemap.xml, robots.txt and the
+       Person schema "url" below (7 places). -->
+  <link rel="canonical" href="https://devssiyam.github.io/portfolio/" />
+  <meta property="og:url" content="https://devssiyam.github.io/portfolio/" />
+  <meta property="og:image" content="https://devssiyam.github.io/portfolio/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="MD SIYAM Uzzaman — Portfolio" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MD SIYAM UZZAMAN | Frontend Developer & Shopify Designer" />
+  <meta name="twitter:description"
+    content="Portfolio of MD SIYAM UZZAMAN – Frontend Developer & Shopify Store Designer from Bangladesh." />
+  <meta name="twitter:image" content="https://devssiyam.github.io/portfolio/og-image.png" />
+  <!-- og:locale intentionally omitted (would assert a region the content
+       does not have); twitter:creator intentionally omitted (no verified
+       X handle in the real data). -->
+
+  <!-- Phase 23 (SEO): Person schema — every value below is real, verified
+       data from this repository: name (git author / copyright), jobTitle
+       (the hero tagline), email (git-verified, Phase 16), country (the
+       site's location line), sameAs (GitHub verified via API in Phase 11;
+       LinkedIn as declared by the site itself). No skills, no
+       credentials, no invented affiliations. -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "MD Siyam Uzzaman",
+      "jobTitle": "Frontend Developer & Shopify Store Designer",
+      "url": "https://devssiyam.github.io/portfolio/",
+      "email": "mailto:devs.siyam@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "Bangladesh"
+      },
+      "sameAs": [
+        "https://github.com/devssiyam",
+        "https://www.linkedin.com/in/siyam-uzzaman"
+      ]
+    }
+  </script>
+
   <title>MD SIYAM UZZAMAN | Frontend Developer & Shopify Designer</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%233B82F6'/><text y='.9em' font-size='65' font-family='sans-serif' font-weight='900' fill='white' x='50%' text-anchor='middle'>S</text></svg>" />
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts (Phase 06 — typography roles):
+       Geist   = display face: headings, nav, buttons, labels, technical UI
+       Inter   = body and supporting text
+       Fira Code = the site's code motif (code card, chips, tags)
+       Variable ranges + display=swap so fallback stacks take over immediately
+       and every requested weight is real, not synthesized.
+       Phase 26: the typing line is gone — Fira Code's remaining jobs
+       are the code card and the mono UI chrome.
+       Phase 22: Lora removed — it existed only for the testimonial serif
+       voice, and no element on the current page uses it (dead download:
+       roman + italic variable woff2). The --font-serif token + fallback
+       stack remain for reference. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Geist:wght@500..900&family=Inter:wght@300..900&display=swap"
     rel="stylesheet" />
 </head>
 
