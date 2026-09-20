@@ -1,25 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 /**
  * Reactive matchMedia hook. Replaces the three separate
- * `window.matchMedia('(max-width: 768px)').matches` one-shot checks in the
- * original script.js (cursor's own 768px CSS gate, card tilt module #14, and
- * orb parallax module #17) with one source of truth for the literal 768.
+ * `window.matchMedia('(max-width: 768px)').matches` one-shot checks in
+ * the original script.js (cursor's own 768px CSS gate, card tilt module
+ * #14, and orb parallax module #17) with one source of truth.
+ *
+ * Phase 19: rewritten on useSyncExternalStore — the previous
+ * setState-in-effect pattern triggered the react(set-state-in-effect)
+ * lint warning (the last of the three pre-existing ones). Same
+ * subscription behavior, clean render derivation.
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia(query).matches : false,
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mql = window.matchMedia(query);
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
+    },
+    [query],
   );
-
-  useEffect(() => {
-    const mql = window.matchMedia(query);
-    function handler(e: MediaQueryListEvent) {
-      setMatches(e.matches);
-    }
-    setMatches(mql.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, [query]);
-
-  return matches;
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }

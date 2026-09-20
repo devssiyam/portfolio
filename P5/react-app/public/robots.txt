@@ -1,0 +1,6 @@
+# MD SIYAM UZZAMAN — portfolio
+# Single-page site: everything is on one URL, nothing to disallow.
+User-agent: *
+Allow: /
+
+Sitemap: https://devssiyam.github.io/portfolio/sitemap.xml

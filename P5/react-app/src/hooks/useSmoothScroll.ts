@@ -11,10 +11,20 @@ import { useEffect } from 'react';
  */
 export function useSmoothScroll() {
   useEffect(() => {
+    // Phase 19: honor prefers-reduced-motion — reduced users get an
+    // instant jump, not a smooth glide.
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
     function onClick(e: MouseEvent) {
       const target = e.target as HTMLElement;
       const anchor = target.closest('a[href^="#"]') as HTMLAnchorElement | null;
       if (!anchor) return;
+
+      // The skip link (Phase 07) must keep NATIVE fragment navigation:
+      // the browser jumps to #main AND moves keyboard focus to it
+      // (it carries tabIndex=-1). Smoothing it here would preventDefault
+      // and scroll without transferring focus, defeating the skip link.
+      if (anchor.classList.contains('skip-link')) return;
 
       const href = anchor.getAttribute('href');
       if (!href || href === '#') return;
@@ -27,7 +37,7 @@ export function useSmoothScroll() {
         parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-height')) || 70;
 
       const targetTop = el.getBoundingClientRect().top + window.scrollY - navHeight;
-      window.scrollTo({ top: targetTop, behavior: 'smooth' });
+      window.scrollTo({ top: targetTop, behavior: reduced.matches ? 'auto' : 'smooth' });
     }
 
     document.addEventListener('click', onClick);
